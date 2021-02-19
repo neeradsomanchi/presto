@@ -57,6 +57,17 @@ public class StaticCatalogStore
         this.disabledCatalogs = ImmutableSet.copyOf(disabledCatalogs);
     }
 
+    private static List<File> listFiles(File installedPluginsDir)
+    {
+        if (installedPluginsDir != null && installedPluginsDir.isDirectory()) {
+            File[] files = installedPluginsDir.listFiles();
+            if (files != null) {
+                return ImmutableList.copyOf(files);
+            }
+        }
+        return ImmutableList.of();
+    }
+
     public boolean areCatalogsLoaded()
     {
         return catalogsLoaded.get();
@@ -122,16 +133,5 @@ public class StaticCatalogStore
 
         connectorManager.createConnection(catalogName, connectorName, connectorProperties.build());
         log.info("-- Added catalog %s using connector %s --", catalogName, connectorName);
-    }
-
-    private static List<File> listFiles(File installedPluginsDir)
-    {
-        if (installedPluginsDir != null && installedPluginsDir.isDirectory()) {
-            File[] files = installedPluginsDir.listFiles();
-            if (files != null) {
-                return ImmutableList.copyOf(files);
-            }
-        }
-        return ImmutableList.of();
     }
 }

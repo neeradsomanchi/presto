@@ -512,7 +512,8 @@ public class ServerMainModule
                 .addProperty("node_version", nodeVersion.toString())
                 .addProperty("coordinator", String.valueOf(serverConfig.isCoordinator()))
                 .addProperty("resource_manager", String.valueOf(serverConfig.isResourceManager()))
-                .addProperty("connectorIds", nullToEmpty(serverConfig.getDataSources()));
+                .addProperty("connectorIds", nullToEmpty(serverConfig.getDataSources()))
+                .addProperty("nodePool", String.valueOf(serverConfig.getNodePool()));
 
         // server info resource
         jaxrsBinder(binder).bind(ServerInfoResource.class);

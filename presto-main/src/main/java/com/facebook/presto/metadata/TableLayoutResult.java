@@ -34,16 +34,6 @@ public class TableLayoutResult
         this.unenforcedConstraint = requireNonNull(unenforcedConstraint, "unenforcedConstraint is null");
     }
 
-    public TableLayout getLayout()
-    {
-        return layout;
-    }
-
-    public TupleDomain<ColumnHandle> getUnenforcedConstraint()
-    {
-        return unenforcedConstraint;
-    }
-
     public static TupleDomain<ColumnHandle> computeEnforced(TupleDomain<ColumnHandle> predicate, TupleDomain<ColumnHandle> unenforced)
     {
         if (predicate.isNone()) {
@@ -92,5 +82,15 @@ public class TableLayoutResult
                 enforcedDomains.size() + unenforcedDomains.size() == predicateDomains.size(),
                 "Enforced tuple domain cannot be determined. Connector returned an unenforced TupleDomain that contains columns not in predicate.");
         return TupleDomain.withColumnDomains(enforcedDomains);
+    }
+
+    public TableLayout getLayout()
+    {
+        return layout;
+    }
+
+    public TupleDomain<ColumnHandle> getUnenforcedConstraint()
+    {
+        return unenforcedConstraint;
     }
 }

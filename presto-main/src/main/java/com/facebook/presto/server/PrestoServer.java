@@ -48,6 +48,8 @@ import com.facebook.presto.sql.analyzer.FeaturesConfig;
 import com.facebook.presto.sql.parser.SqlParserOptions;
 import com.facebook.presto.storage.TempStorageManager;
 import com.facebook.presto.storage.TempStorageModule;
+import com.facebook.presto.ttl.TtlFetcherManager;
+import com.facebook.presto.ttl.TtlFetcherManagerModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -74,11 +76,6 @@ import static java.util.Objects.requireNonNull;
 public class PrestoServer
         implements Runnable
 {
-    public static void main(String[] args)
-    {
-        new PrestoServer().run();
-    }
-
     private final SqlParserOptions sqlParserOptions;
 
     public PrestoServer()
@@ -91,85 +88,9 @@ public class PrestoServer
         this.sqlParserOptions = requireNonNull(sqlParserOptions, "sqlParserOptions is null");
     }
 
-    @Override
-    public void run()
+    public static void main(String[] args)
     {
-        verifyJvmRequirements();
-        verifySystemTimeIsReasonable();
-
-        Logger log = Logger.get(PrestoServer.class);
-
-        ImmutableList.Builder<Module> modules = ImmutableList.builder();
-        modules.add(
-                new NodeModule(),
-                new DiscoveryModule(),
-                new HttpServerModule(),
-                new JsonModule(),
-                installModuleIf(
-                        FeaturesConfig.class,
-                        FeaturesConfig::isJsonSerdeCodeGenerationEnabled,
-                        binder -> jsonBinder(binder).addModuleBinding().to(AfterburnerModule.class)),
-                new SmileModule(),
-                new JaxrsModule(true),
-                new MBeanModule(),
-                new JmxModule(),
-                new JmxHttpModule(),
-                new LogJmxModule(),
-                new TraceTokenModule(),
-                new JsonEventModule(),
-                new HttpEventModule(),
-                new ServerSecurityModule(),
-                new AccessControlModule(),
-                new EventListenerModule(),
-                new ServerMainModule(sqlParserOptions),
-                new GracefulShutdownModule(),
-                new WarningCollectorModule(),
-                new TempStorageModule());
-
-        modules.addAll(getAdditionalModules());
-
-        Bootstrap app = new Bootstrap(modules.build());
-
-        try {
-            Injector injector = app.initialize();
-
-            injector.getInstance(PluginManager.class).loadPlugins();
-
-            injector.getInstance(StaticCatalogStore.class).loadCatalogs();
-
-            // TODO: remove this huge hack
-            updateConnectorIds(
-                    injector.getInstance(Announcer.class),
-                    injector.getInstance(CatalogManager.class),
-                    injector.getInstance(ServerConfig.class),
-                    injector.getInstance(NodeSchedulerConfig.class));
-
-            // TODO: thrift server port should be announced by discovery server similar to http/https ports
-            updateThriftServerPort(
-                    injector.getInstance(Announcer.class),
-                    injector.getInstance(DriftServer.class));
-
-            injector.getInstance(StaticFunctionNamespaceStore.class).loadFunctionNamespaceManagers();
-            injector.getInstance(SessionPropertyDefaults.class).loadConfigurationManager();
-            injector.getInstance(ResourceGroupManager.class).loadConfigurationManager();
-            injector.getInstance(AccessControlManager.class).loadSystemAccessControl();
-            injector.getInstance(PasswordAuthenticatorManager.class).loadPasswordAuthenticator();
-            injector.getInstance(EventListenerManager.class).loadConfiguredEventListener();
-            injector.getInstance(TempStorageManager.class).loadTempStorages();
-
-            injector.getInstance(Announcer.class).start();
-
-            log.info("======== SERVER STARTED ========");
-        }
-        catch (Throwable e) {
-            log.error(e);
-            System.exit(1);
-        }
-    }
-
-    protected Iterable<? extends Module> getAdditionalModules()
-    {
-        return ImmutableList.of();
+        new PrestoServer().run();
     }
 
     private static void updateConnectorIds(Announcer announcer, CatalogManager metadata, ServerConfig serverConfig, NodeSchedulerConfig schedulerConfig)
@@ -241,5 +162,88 @@ public class PrestoServer
             }
         }
         throw new IllegalArgumentException("Presto announcement not found: " + announcements);
+    }
+
+    @Override
+    public void run()
+    {
+        verifyJvmRequirements();
+        verifySystemTimeIsReasonable();
+
+        Logger log = Logger.get(PrestoServer.class);
+
+        ImmutableList.Builder<Module> modules = ImmutableList.builder();
+        modules.add(
+                new NodeModule(),
+                new DiscoveryModule(),
+                new HttpServerModule(),
+                new JsonModule(),
+                installModuleIf(
+                        FeaturesConfig.class,
+                        FeaturesConfig::isJsonSerdeCodeGenerationEnabled,
+                        binder -> jsonBinder(binder).addModuleBinding().to(AfterburnerModule.class)),
+                new SmileModule(),
+                new JaxrsModule(true),
+                new MBeanModule(),
+                new JmxModule(),
+                new JmxHttpModule(),
+                new LogJmxModule(),
+                new TraceTokenModule(),
+                new JsonEventModule(),
+                new HttpEventModule(),
+                new ServerSecurityModule(),
+                new AccessControlModule(),
+                new EventListenerModule(),
+                new ServerMainModule(sqlParserOptions),
+                new GracefulShutdownModule(),
+                new WarningCollectorModule(),
+                new TempStorageModule(),
+                new TtlFetcherManagerModule());
+
+        modules.addAll(getAdditionalModules());
+
+        Bootstrap app = new Bootstrap(modules.build());
+
+        try {
+            Injector injector = app.initialize();
+
+            injector.getInstance(PluginManager.class).loadPlugins();
+
+            injector.getInstance(StaticCatalogStore.class).loadCatalogs();
+
+            // TODO: remove this huge hack
+            updateConnectorIds(
+                    injector.getInstance(Announcer.class),
+                    injector.getInstance(CatalogManager.class),
+                    injector.getInstance(ServerConfig.class),
+                    injector.getInstance(NodeSchedulerConfig.class));
+
+            // TODO: thrift server port should be announced by discovery server similar to http/https ports
+            updateThriftServerPort(
+                    injector.getInstance(Announcer.class),
+                    injector.getInstance(DriftServer.class));
+
+            injector.getInstance(StaticFunctionNamespaceStore.class).loadFunctionNamespaceManagers();
+            injector.getInstance(SessionPropertyDefaults.class).loadConfigurationManager();
+            injector.getInstance(ResourceGroupManager.class).loadConfigurationManager();
+            injector.getInstance(AccessControlManager.class).loadSystemAccessControl();
+            injector.getInstance(PasswordAuthenticatorManager.class).loadPasswordAuthenticator();
+            injector.getInstance(EventListenerManager.class).loadConfiguredEventListener();
+            injector.getInstance(TempStorageManager.class).loadTempStorages();
+            injector.getInstance(TtlFetcherManager.class).start();
+
+            injector.getInstance(Announcer.class).start();
+
+            log.info("======== SERVER STARTED ========");
+        }
+        catch (Throwable e) {
+            log.error(e);
+            System.exit(1);
+        }
+    }
+
+    protected Iterable<? extends Module> getAdditionalModules()
+    {
+        return ImmutableList.of();
     }
 }

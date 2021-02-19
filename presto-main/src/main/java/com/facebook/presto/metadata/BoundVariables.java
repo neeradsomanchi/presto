@@ -38,6 +38,32 @@ public class BoundVariables
         this.longVariables = ImmutableMap.copyOf(longVariables);
     }
 
+    private static <T> T getValue(Map<String, T> map, String variableName)
+    {
+        checkState(variableName != null, "variableName is null");
+        T value = map.get(variableName);
+        checkState(value != null, "value for variable '%s' is null", variableName);
+        return value;
+    }
+
+    private static boolean containsValue(Map<String, ?> map, String variableName)
+    {
+        checkState(variableName != null, "variableName is null");
+        return map.containsKey(variableName);
+    }
+
+    private static <T> void setValue(Map<String, T> map, String variableName, T value)
+    {
+        checkState(variableName != null, "variableName is null");
+        checkState(value != null, "value for variable '%s' is null", variableName);
+        map.put(variableName, value);
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public Type getTypeVariable(String variableName)
     {
         return getValue(typeVariables, variableName);
@@ -68,27 +94,6 @@ public class BoundVariables
         return longVariables;
     }
 
-    private static <T> T getValue(Map<String, T> map, String variableName)
-    {
-        checkState(variableName != null, "variableName is null");
-        T value = map.get(variableName);
-        checkState(value != null, "value for variable '%s' is null", variableName);
-        return value;
-    }
-
-    private static boolean containsValue(Map<String, ?> map, String variableName)
-    {
-        checkState(variableName != null, "variableName is null");
-        return map.containsKey(variableName);
-    }
-
-    private static <T> void setValue(Map<String, T> map, String variableName, T value)
-    {
-        checkState(variableName != null, "variableName is null");
-        checkState(value != null, "value for variable '%s' is null", variableName);
-        map.put(variableName, value);
-    }
-
     @Override
     public boolean equals(Object o)
     {
@@ -116,11 +121,6 @@ public class BoundVariables
                 .add("typeVariables", typeVariables)
                 .add("longVariables", longVariables)
                 .toString();
-    }
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

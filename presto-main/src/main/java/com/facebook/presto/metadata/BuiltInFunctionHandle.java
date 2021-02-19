@@ -35,6 +35,13 @@ public class BuiltInFunctionHandle
         checkArgument(signature.getTypeVariableConstraints().isEmpty(), "%s has unbound type parameters", signature);
     }
 
+    private static void checkArgument(boolean condition, String message, Object... args)
+    {
+        if (!condition) {
+            throw new IllegalArgumentException(String.format(message, args));
+        }
+    }
+
     @JsonProperty
     public Signature getSignature()
     {
@@ -70,12 +77,5 @@ public class BuiltInFunctionHandle
     public String toString()
     {
         return signature.toString();
-    }
-
-    private static void checkArgument(boolean condition, String message, Object... args)
-    {
-        if (!condition) {
-            throw new IllegalArgumentException(String.format(message, args));
-        }
     }
 }

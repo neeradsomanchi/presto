@@ -11,29 +11,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.spi;
+package com.facebook.presto.ttl;
 
-import java.net.URI;
+import com.facebook.presto.metadata.InternalNode;
+import com.google.common.collect.ImmutableSet;
 
-public interface Node
+import java.util.Map;
+import java.util.Set;
+
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.util.function.Function.identity;
+
+public class InMemoryTtlFetcher
+        implements TtlFetcher
 {
-    String getHost();
-
-    HostAddress getHostAndPort();
-
-    /**
-     * @deprecated Connectors should not access the HTTP endpoints of other nodes.
-     */
-    @Deprecated
-    URI getHttpUri();
-
-    String getNodeIdentifier();
-
-    String getVersion();
-
-    boolean isCoordinator();
-
-    boolean isResourceManager();
-
-    String getNodePool();
+    @Override
+    public Map<InternalNode, NodeTtl> getTtlInfo(Set<InternalNode> nodes)
+    {
+        return nodes.stream().collect(toImmutableMap(identity(), node -> new NodeTtl(ImmutableSet.of())));
+    }
 }

@@ -55,6 +55,32 @@ public class ProcedureRegistry
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
     }
 
+    private static Class<?> getObjectType(Type type)
+    {
+        if (type.equals(BOOLEAN)) {
+            return boolean.class;
+        }
+        if (type.equals(BIGINT)) {
+            return long.class;
+        }
+        if (type.equals(DOUBLE)) {
+            return double.class;
+        }
+        if (type.equals(VARCHAR)) {
+            return String.class;
+        }
+        if (type.getTypeSignature().getBase().equals(ARRAY)) {
+            getObjectType(type.getTypeParameters().get(0));
+            return List.class;
+        }
+        if (type.getTypeSignature().getBase().equals(MAP)) {
+            getObjectType(type.getTypeParameters().get(0));
+            getObjectType(type.getTypeParameters().get(1));
+            return Map.class;
+        }
+        throw new IllegalArgumentException("Unsupported argument type: " + type.getDisplayName());
+    }
+
     public void addProcedures(ConnectorId connectorId, Collection<Procedure> procedures)
     {
         requireNonNull(connectorId, "connectorId is null");
@@ -104,31 +130,5 @@ public class ProcedureRegistry
                     argumentType.getName(),
                     expectedType.getName());
         }
-    }
-
-    private static Class<?> getObjectType(Type type)
-    {
-        if (type.equals(BOOLEAN)) {
-            return boolean.class;
-        }
-        if (type.equals(BIGINT)) {
-            return long.class;
-        }
-        if (type.equals(DOUBLE)) {
-            return double.class;
-        }
-        if (type.equals(VARCHAR)) {
-            return String.class;
-        }
-        if (type.getTypeSignature().getBase().equals(ARRAY)) {
-            getObjectType(type.getTypeParameters().get(0));
-            return List.class;
-        }
-        if (type.getTypeSignature().getBase().equals(MAP)) {
-            getObjectType(type.getTypeParameters().get(0));
-            getObjectType(type.getTypeParameters().get(1));
-            return Map.class;
-        }
-        throw new IllegalArgumentException("Unsupported argument type: " + type.getDisplayName());
     }
 }

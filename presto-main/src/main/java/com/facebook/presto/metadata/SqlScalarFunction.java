@@ -32,14 +32,6 @@ public abstract class SqlScalarFunction
         checkArgument(signature.getKind() == SCALAR, "function kind must be SCALAR");
     }
 
-    @Override
-    public final Signature getSignature()
-    {
-        return signature;
-    }
-
-    public abstract BuiltInScalarFunctionImplementation specialize(BoundVariables boundVariables, int arity, FunctionAndTypeManager functionAndTypeManager);
-
     public static PolymorphicScalarFunctionBuilder builder(Class<?> clazz, OperatorType operatorType)
     {
         return new PolymorphicScalarFunctionBuilder(clazz, operatorType);
@@ -49,4 +41,12 @@ public abstract class SqlScalarFunction
     {
         return new PolymorphicScalarFunctionBuilder(clazz);
     }
+
+    @Override
+    public final Signature getSignature()
+    {
+        return signature;
+    }
+
+    public abstract BuiltInScalarFunctionImplementation specialize(BoundVariables boundVariables, int arity, FunctionAndTypeManager functionAndTypeManager);
 }

@@ -91,6 +91,8 @@ public final class DiscoveryNodeManager
     private final CommunicationProtocol protocol;
 
     @GuardedBy("this")
+    private final List<Consumer<AllNodes>> listeners = new ArrayList<>();
+    @GuardedBy("this")
     private SetMultimap<ConnectorId, InternalNode> activeNodesByConnectorId;
 
     @GuardedBy("this")
@@ -101,9 +103,6 @@ public final class DiscoveryNodeManager
 
     @GuardedBy("this")
     private Set<InternalNode> resourceManagers;
-
-    @GuardedBy("this")
-    private final List<Consumer<AllNodes>> listeners = new ArrayList<>();
 
     @Inject
     public DiscoveryNodeManager(
@@ -142,8 +141,9 @@ public final class DiscoveryNodeManager
             URI uri = getHttpUri(service, httpsRequired);
             OptionalInt thriftPort = getThriftServerPort(service);
             NodeVersion nodeVersion = getNodeVersion(service);
+            String nodePool = getNodePool(service);
             if (uri != null && nodeVersion != null) {
-                InternalNode node = new InternalNode(service.getNodeId(), uri, thriftPort, nodeVersion, isCoordinator(service), isResourceManager(service));
+                InternalNode node = new InternalNode(service.getNodeId(), uri, thriftPort, nodeVersion, isCoordinator(service), isResourceManager(service), nodePool);
 
                 if (node.getNodeIdentifier().equals(currentNodeId)) {
                     checkState(
@@ -248,12 +248,13 @@ public final class DiscoveryNodeManager
             URI uri = getHttpUri(service, httpsRequired);
             OptionalInt thriftPort = getThriftServerPort(service);
             NodeVersion nodeVersion = getNodeVersion(service);
+            String nodePool = getNodePool(service);
             // Currently, a node may have the roles of both a coordinator and a worker.  In the future, a resource manager may also
             // take the form of a coordinator, hence these flags are not exclusive.
             boolean coordinator = isCoordinator(service);
             boolean resourceManager = isResourceManager(service);
             if (uri != null && nodeVersion != null) {
-                InternalNode node = new InternalNode(service.getNodeId(), uri, thriftPort, nodeVersion, coordinator, resourceManager);
+                InternalNode node = new InternalNode(service.getNodeId(), uri, thriftPort, nodeVersion, coordinator, resourceManager, nodePool);
                 NodeState nodeState = getNodeState(node);
 
                 switch (nodeState) {
@@ -455,5 +456,10 @@ public final class DiscoveryNodeManager
     private static boolean isResourceManager(ServiceDescriptor service)
     {
         return Boolean.parseBoolean(service.getProperties().get("resource_manager"));
+    }
+
+    private static String getNodePool(ServiceDescriptor descriptor)
+    {
+        return descriptor.getProperties().get("nodePool");
     }
 }

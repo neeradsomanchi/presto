@@ -41,6 +41,7 @@ public class InternalNode
     private final NodeVersion nodeVersion;
     private final boolean coordinator;
     private final boolean resourceManager;
+    private final String nodePool;
 
     public InternalNode(String nodeIdentifier, URI internalUri, NodeVersion nodeVersion, boolean coordinator)
     {
@@ -49,16 +50,16 @@ public class InternalNode
 
     public InternalNode(String nodeIdentifier, URI internalUri, NodeVersion nodeVersion, boolean coordinator, boolean resourceManager)
     {
-        this(nodeIdentifier, internalUri, OptionalInt.empty(), nodeVersion, coordinator, resourceManager);
+        this(nodeIdentifier, internalUri, OptionalInt.empty(), nodeVersion, coordinator, resourceManager, "general");
     }
 
     @ThriftConstructor
     public InternalNode(String nodeIdentifier, URI internalUri, OptionalInt thriftPort, String nodeVersion, boolean coordinator, boolean resourceManager)
     {
-        this(nodeIdentifier, internalUri, thriftPort, new NodeVersion(nodeVersion), coordinator, resourceManager);
+        this(nodeIdentifier, internalUri, thriftPort, new NodeVersion(nodeVersion), coordinator, resourceManager, "general");
     }
 
-    public InternalNode(String nodeIdentifier, URI internalUri, OptionalInt thriftPort, NodeVersion nodeVersion, boolean coordinator, boolean resourceManager)
+    public InternalNode(String nodeIdentifier, URI internalUri, OptionalInt thriftPort, NodeVersion nodeVersion, boolean coordinator, boolean resourceManager, String nodePool)
     {
         nodeIdentifier = emptyToNull(nullToEmpty(nodeIdentifier).trim());
         this.nodeIdentifier = requireNonNull(nodeIdentifier, "nodeIdentifier is null or empty");
@@ -67,6 +68,7 @@ public class InternalNode
         this.nodeVersion = requireNonNull(nodeVersion, "nodeVersion is null");
         this.coordinator = coordinator;
         this.resourceManager = resourceManager;
+        this.nodePool = nodePool;
     }
 
     @ThriftField(1)
@@ -126,6 +128,13 @@ public class InternalNode
     public boolean isResourceManager()
     {
         return resourceManager;
+    }
+
+    @ThriftField(7)
+    @Override
+    public String getNodePool()
+    {
+        return nodePool;
     }
 
     public NodeVersion getNodeVersion()
