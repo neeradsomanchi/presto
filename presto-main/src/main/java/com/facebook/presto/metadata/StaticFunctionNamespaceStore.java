@@ -45,6 +45,17 @@ public class StaticFunctionNamespaceStore
         this.configDir = config.getFunctionNamespaceConfigurationDir();
     }
 
+    private static List<File> listFiles(File dir)
+    {
+        if (dir != null && dir.isDirectory()) {
+            File[] files = dir.listFiles();
+            if (files != null) {
+                return ImmutableList.copyOf(files);
+            }
+        }
+        return ImmutableList.of();
+    }
+
     public void loadFunctionNamespaceManagers()
             throws Exception
     {
@@ -80,16 +91,5 @@ public class StaticFunctionNamespaceStore
 
         functionAndTypeManager.loadFunctionNamespaceManager(functionNamespaceManagerName, catalogName, properties);
         log.info("-- Added function namespace manager [%s] --", catalogName);
-    }
-
-    private static List<File> listFiles(File dir)
-    {
-        if (dir != null && dir.isDirectory()) {
-            File[] files = dir.listFiles();
-            if (files != null) {
-                return ImmutableList.copyOf(files);
-            }
-        }
-        return ImmutableList.of();
     }
 }

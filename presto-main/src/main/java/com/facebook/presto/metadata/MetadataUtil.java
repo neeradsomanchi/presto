@@ -198,12 +198,12 @@ public final class MetadataUtil
 
     public static class SchemaMetadataBuilder
     {
+        private final ImmutableMap.Builder<SchemaTableName, ConnectorTableMetadata> tables = ImmutableMap.builder();
+
         public static SchemaMetadataBuilder schemaMetadataBuilder()
         {
             return new SchemaMetadataBuilder();
         }
-
-        private final ImmutableMap.Builder<SchemaTableName, ConnectorTableMetadata> tables = ImmutableMap.builder();
 
         public SchemaMetadataBuilder table(ConnectorTableMetadata tableMetadata)
         {
@@ -219,16 +219,6 @@ public final class MetadataUtil
 
     public static class TableMetadataBuilder
     {
-        public static TableMetadataBuilder tableMetadataBuilder(String schemaName, String tableName)
-        {
-            return new TableMetadataBuilder(new SchemaTableName(schemaName, tableName));
-        }
-
-        public static TableMetadataBuilder tableMetadataBuilder(SchemaTableName tableName)
-        {
-            return new TableMetadataBuilder(tableName);
-        }
-
         private final SchemaTableName tableName;
         private final ImmutableList.Builder<ColumnMetadata> columns = ImmutableList.builder();
         private final ImmutableMap.Builder<String, Object> properties = ImmutableMap.builder();
@@ -243,6 +233,16 @@ public final class MetadataUtil
         {
             this.tableName = tableName;
             this.comment = comment;
+        }
+
+        public static TableMetadataBuilder tableMetadataBuilder(String schemaName, String tableName)
+        {
+            return new TableMetadataBuilder(new SchemaTableName(schemaName, tableName));
+        }
+
+        public static TableMetadataBuilder tableMetadataBuilder(SchemaTableName tableName)
+        {
+            return new TableMetadataBuilder(tableName);
         }
 
         public TableMetadataBuilder column(String columnName, Type type)

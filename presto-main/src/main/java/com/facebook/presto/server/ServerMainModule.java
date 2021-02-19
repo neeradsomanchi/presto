@@ -502,7 +502,8 @@ public class ServerMainModule
         discoveryBinder(binder).bindHttpAnnouncement("presto")
                 .addProperty("node_version", nodeVersion.toString())
                 .addProperty("coordinator", String.valueOf(serverConfig.isCoordinator()))
-                .addProperty("connectorIds", nullToEmpty(serverConfig.getDataSources()));
+                .addProperty("connectorIds", nullToEmpty(serverConfig.getDataSources()))
+                .addProperty("nodePool", String.valueOf(serverConfig.getNodePool()));
 
         // server info resource
         jaxrsBinder(binder).bind(ServerInfoResource.class);

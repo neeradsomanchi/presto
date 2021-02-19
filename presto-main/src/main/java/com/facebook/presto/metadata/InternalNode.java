@@ -36,13 +36,14 @@ public class InternalNode
     private final OptionalInt thriftPort;
     private final NodeVersion nodeVersion;
     private final boolean coordinator;
+    private final String nodePool;
 
     public InternalNode(String nodeIdentifier, URI internalUri, NodeVersion nodeVersion, boolean coordinator)
     {
-        this(nodeIdentifier, internalUri, OptionalInt.empty(), nodeVersion, coordinator);
+        this(nodeIdentifier, internalUri, OptionalInt.empty(), nodeVersion, coordinator, "general");
     }
 
-    public InternalNode(String nodeIdentifier, URI internalUri, OptionalInt thriftPort, NodeVersion nodeVersion, boolean coordinator)
+    public InternalNode(String nodeIdentifier, URI internalUri, OptionalInt thriftPort, NodeVersion nodeVersion, boolean coordinator, String nodePool)
     {
         nodeIdentifier = emptyToNull(nullToEmpty(nodeIdentifier).trim());
         this.nodeIdentifier = requireNonNull(nodeIdentifier, "nodeIdentifier is null or empty");
@@ -50,6 +51,7 @@ public class InternalNode
         this.thriftPort = requireNonNull(thriftPort, "thriftPort is null");
         this.nodeVersion = requireNonNull(nodeVersion, "nodeVersion is null");
         this.coordinator = coordinator;
+        this.nodePool = nodePool;
     }
 
     @Override
@@ -97,6 +99,12 @@ public class InternalNode
     public boolean isCoordinator()
     {
         return coordinator;
+    }
+
+    @Override
+    public String getNodePool()
+    {
+        return nodePool;
     }
 
     public NodeVersion getNodeVersion()

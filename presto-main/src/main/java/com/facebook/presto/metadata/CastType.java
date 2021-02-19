@@ -41,16 +41,6 @@ public enum CastType
         this.isOperatorType = isOperatorType;
     }
 
-    public QualifiedObjectName getCastName()
-    {
-        return castName;
-    }
-
-    public boolean isOperatorType()
-    {
-        return isOperatorType;
-    }
-
     public static OperatorType toOperatorType(CastType castType)
     {
         switch (castType) {
@@ -61,5 +51,15 @@ public enum CastType
             default:
                 throw new IllegalArgumentException(format("No OperatorType for CastType %s", castType));
         }
+    }
+
+    public QualifiedObjectName getCastName()
+    {
+        return castName;
+    }
+
+    public boolean isOperatorType()
+    {
+        return isOperatorType;
     }
 }

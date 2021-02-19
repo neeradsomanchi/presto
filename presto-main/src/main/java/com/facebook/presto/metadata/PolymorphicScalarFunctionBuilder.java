@@ -45,12 +45,12 @@ public final class PolymorphicScalarFunctionBuilder
 {
     private final Class<?> clazz;
     private final Optional<OperatorType> operatorType;
+    private final List<PolymorphicScalarFunctionChoice> choices = new ArrayList<>();
     private Signature signature;
     private String description;
     private Optional<SqlFunctionVisibility> visibility = Optional.empty();
     private Boolean deterministic;
     private Boolean calledOnNullInput;
-    private final List<PolymorphicScalarFunctionChoice> choices = new ArrayList<>();
 
     public PolymorphicScalarFunctionBuilder(Class<?> clazz)
     {
@@ -62,6 +62,34 @@ public final class PolymorphicScalarFunctionBuilder
     {
         this.clazz = clazz;
         this.operatorType = Optional.of(operatorType);
+    }
+
+    @SafeVarargs
+    public static Function<SpecializeContext, List<Object>> concat(Function<SpecializeContext, List<Object>>... extraParametersFunctions)
+    {
+        return context -> {
+            ImmutableList.Builder<Object> extraParametersBuilder = ImmutableList.builder();
+            for (Function<SpecializeContext, List<Object>> extraParametersFunction : extraParametersFunctions) {
+                extraParametersBuilder.addAll(extraParametersFunction.apply(context));
+            }
+            return extraParametersBuilder.build();
+        };
+    }
+
+    public static <T> Function<SpecializeContext, List<Object>> constant(T value)
+    {
+        return context -> ImmutableList.of(value);
+    }
+
+    private static boolean isOperator(Signature signature)
+    {
+        for (OperatorType operator : OperatorType.values()) {
+            if (signature.getName().equals(operator.getFunctionName())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public PolymorphicScalarFunctionBuilder signature(Signature signature)
@@ -117,34 +145,6 @@ public final class PolymorphicScalarFunctionBuilder
                 choices);
     }
 
-    @SafeVarargs
-    public static Function<SpecializeContext, List<Object>> concat(Function<SpecializeContext, List<Object>>... extraParametersFunctions)
-    {
-        return context -> {
-            ImmutableList.Builder<Object> extraParametersBuilder = ImmutableList.builder();
-            for (Function<SpecializeContext, List<Object>> extraParametersFunction : extraParametersFunctions) {
-                extraParametersBuilder.addAll(extraParametersFunction.apply(context));
-            }
-            return extraParametersBuilder.build();
-        };
-    }
-
-    public static <T> Function<SpecializeContext, List<Object>> constant(T value)
-    {
-        return context -> ImmutableList.of(value);
-    }
-
-    private static boolean isOperator(Signature signature)
-    {
-        for (OperatorType operator : OperatorType.values()) {
-            if (signature.getName().equals(operator.getFunctionName())) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public static final class SpecializeContext
     {
         private final BoundVariables boundVariables;
@@ -190,9 +190,8 @@ public final class PolymorphicScalarFunctionBuilder
     {
         private final Class<?> clazz;
         private final Signature signature;
-        private List<ArgumentProperty> argumentProperties;
         private final ImmutableList.Builder<MethodAndNativeContainerTypes> methodAndNativeContainerTypesList = ImmutableList.builder();
-
+        private final List<ArgumentProperty> argumentProperties;
         private Optional<Function<SpecializeContext, List<Object>>> extraParametersFunction = Optional.empty();
 
         private MethodsGroupBuilder(Class<?> clazz, Signature signature, List<ArgumentProperty> argumentProperties)
@@ -261,10 +260,10 @@ public final class PolymorphicScalarFunctionBuilder
     {
         private final Class<?> clazz;
         private final Signature signature;
+        private final ImmutableList.Builder<MethodsGroup> methodsGroups = ImmutableList.builder();
         private boolean nullableResult;
         private List<ArgumentProperty> argumentProperties;
         private ReturnPlaceConvention returnPlaceConvention;
-        private final ImmutableList.Builder<MethodsGroup> methodsGroups = ImmutableList.builder();
 
         private ChoiceBuilder(Class<?> clazz, Signature signature)
         {

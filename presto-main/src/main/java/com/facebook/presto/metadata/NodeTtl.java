@@ -11,27 +11,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.spi;
+package com.facebook.presto.metadata;
 
-import java.net.URI;
+import io.airlift.units.Duration;
 
-public interface Node
+import java.util.Set;
+
+public class NodeTtl
 {
-    String getHost();
+    private final Set<TtlConfidence> ttls;
 
-    HostAddress getHostAndPort();
+    public NodeTtl(Set<TtlConfidence> ttls)
+    {
+        this.ttls = ttls;
+    }
 
-    /**
-     * @deprecated Connectors should not access the HTTP endpoints of other nodes.
-     */
-    @Deprecated
-    URI getHttpUri();
+    public Duration getTimeRemaining()
+    {
+        return null;
+    }
 
-    String getNodeIdentifier();
-
-    String getVersion();
-
-    boolean isCoordinator();
-
-    String getNodePool();
+    public Set<TtlConfidence> getTtls()
+    {
+        return ttls;
+    }
 }

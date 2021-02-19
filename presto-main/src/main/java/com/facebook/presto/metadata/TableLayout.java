@@ -52,6 +52,11 @@ public class TableLayout
         this.layout = layout;
     }
 
+    public static TableLayout fromConnectorLayout(ConnectorId connectorId, ConnectorTableHandle connectorTableHandle, ConnectorTransactionHandle transactionHandle, ConnectorTableLayout layout)
+    {
+        return new TableLayout(connectorId, connectorTableHandle, transactionHandle, layout);
+    }
+
     public ConnectorId getConnectorId()
     {
         return connectorId;
@@ -101,11 +106,6 @@ public class TableLayout
     public Optional<DiscretePredicates> getDiscretePredicates()
     {
         return layout.getDiscretePredicates();
-    }
-
-    public static TableLayout fromConnectorLayout(ConnectorId connectorId, ConnectorTableHandle connectorTableHandle, ConnectorTransactionHandle transactionHandle, ConnectorTableLayout layout)
-    {
-        return new TableLayout(connectorId, connectorTableHandle, transactionHandle, layout);
     }
 
     public static class TablePartitioning

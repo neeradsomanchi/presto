@@ -39,19 +39,6 @@ public abstract class SqlAggregationFunction
     private final Signature signature;
     private final SqlFunctionVisibility visibility;
 
-    public static List<SqlAggregationFunction> createFunctionByAnnotations(Class<?> aggregationDefinition)
-    {
-        return ImmutableList.of(AggregationFromAnnotationsParser.parseFunctionDefinition(aggregationDefinition));
-    }
-
-    public static List<SqlAggregationFunction> createFunctionsByAnnotations(Class<?> aggregationDefinition)
-    {
-        return AggregationFromAnnotationsParser.parseFunctionDefinitions(aggregationDefinition)
-                .stream()
-                .map(x -> (SqlAggregationFunction) x)
-                .collect(toImmutableList());
-    }
-
     protected SqlAggregationFunction(
             String name,
             List<TypeVariableConstraint> typeVariableConstraints,
@@ -77,6 +64,19 @@ public abstract class SqlAggregationFunction
     {
         this.signature = requireNonNull(signature, "signature is null");
         this.visibility = visibility;
+    }
+
+    public static List<SqlAggregationFunction> createFunctionByAnnotations(Class<?> aggregationDefinition)
+    {
+        return ImmutableList.of(AggregationFromAnnotationsParser.parseFunctionDefinition(aggregationDefinition));
+    }
+
+    public static List<SqlAggregationFunction> createFunctionsByAnnotations(Class<?> aggregationDefinition)
+    {
+        return AggregationFromAnnotationsParser.parseFunctionDefinitions(aggregationDefinition)
+                .stream()
+                .map(x -> (SqlAggregationFunction) x)
+                .collect(toImmutableList());
     }
 
     private static Signature createSignature(

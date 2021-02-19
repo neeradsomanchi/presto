@@ -29,6 +29,7 @@ public class ServerConfig
     private Duration gracePeriod = new Duration(2, MINUTES);
     private boolean enhancedErrorReporting = true;
     private boolean queryResultsCompressionEnabled = true;
+    private String nodePool = "general";
 
     public boolean isCoordinator()
     {
@@ -39,6 +40,18 @@ public class ServerConfig
     public ServerConfig setCoordinator(boolean coordinator)
     {
         this.coordinator = coordinator;
+        return this;
+    }
+
+    public String getNodePool()
+    {
+        return nodePool;
+    }
+
+    @Config("node-pool")
+    public ServerConfig setNodePool(String nodePool)
+    {
+        this.nodePool = nodePool;
         return this;
     }
 

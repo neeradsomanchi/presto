@@ -142,6 +142,17 @@ public class FunctionAndTypeManager
         return new FunctionAndTypeManager(createTestTransactionManager(), new BlockEncodingManager(), new FeaturesConfig(), new HandleResolver(), ImmutableSet.of());
     }
 
+    public static QualifiedObjectName qualifyObjectName(QualifiedName name)
+    {
+        if (!name.getPrefix().isPresent()) {
+            return QualifiedObjectName.valueOf(DEFAULT_NAMESPACE, name.getSuffix());
+        }
+        if (name.getOriginalParts().size() != 3) {
+            throw new PrestoException(FUNCTION_NOT_FOUND, format("Non-builtin functions must be referenced by 'catalog.schema.function_name', found: %s", name));
+        }
+        return QualifiedObjectName.valueOf(name.getParts().get(0), name.getParts().get(1), name.getParts().get(2));
+    }
+
     @Managed
     @Nested
     public CacheStatsMBean getFunctionResolutionCacheStats()
@@ -285,17 +296,6 @@ public class FunctionAndTypeManager
         else if (!exists) {
             throw new PrestoException(FUNCTION_NOT_FOUND, format("Function not found: %s", functionName.getCatalogSchemaName()));
         }
-    }
-
-    public static QualifiedObjectName qualifyObjectName(QualifiedName name)
-    {
-        if (!name.getPrefix().isPresent()) {
-            return QualifiedObjectName.valueOf(DEFAULT_NAMESPACE, name.getSuffix());
-        }
-        if (name.getOriginalParts().size() != 3) {
-            throw new PrestoException(FUNCTION_NOT_FOUND, format("Non-builtin functions must be referenced by 'catalog.schema.function_name', found: %s", name));
-        }
-        return QualifiedObjectName.valueOf(name.getParts().get(0), name.getParts().get(1), name.getParts().get(2));
     }
 
     /**

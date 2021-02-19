@@ -11,27 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.presto.spi;
+package com.facebook.presto.metadata;
 
-import java.net.URI;
+import java.util.Map;
+import java.util.Set;
 
-public interface Node
+public interface TtlFetcher
 {
-    String getHost();
-
-    HostAddress getHostAndPort();
-
-    /**
-     * @deprecated Connectors should not access the HTTP endpoints of other nodes.
-     */
-    @Deprecated
-    URI getHttpUri();
-
-    String getNodeIdentifier();
-
-    String getVersion();
-
-    boolean isCoordinator();
-
-    String getNodePool();
+    Map<InternalNode, NodeTtl> getTtlInfo(Set<InternalNode> nodes);
 }

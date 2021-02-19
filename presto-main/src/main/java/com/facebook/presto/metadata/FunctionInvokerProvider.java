@@ -45,18 +45,6 @@ public class FunctionInvokerProvider
         this.functionAndTypeManager = functionAndTypeManager;
     }
 
-    public FunctionInvoker createFunctionInvoker(FunctionHandle functionHandle, Optional<InvocationConvention> invocationConvention)
-    {
-        BuiltInScalarFunctionImplementation builtInScalarFunctionImplementation = functionAndTypeManager.getBuiltInScalarFunctionImplementation(functionHandle);
-        for (ScalarImplementationChoice choice : builtInScalarFunctionImplementation.getAllChoices()) {
-            if (checkChoice(choice.getArgumentProperties(), choice.isNullable(), choice.hasProperties(), invocationConvention)) {
-                return new FunctionInvoker(choice.getMethodHandle());
-            }
-        }
-        checkState(invocationConvention.isPresent());
-        throw new PrestoException(FUNCTION_NOT_FOUND, format("Dependent function implementation (%s) with convention (%s) is not available", functionHandle, invocationConvention.toString()));
-    }
-
     @VisibleForTesting
     static boolean checkChoice(List<ArgumentProperty> definitionArgumentProperties, boolean definitionReturnsNullable, boolean definitionHasSession, Optional<InvocationConvention> invocationConvention)
     {
@@ -97,9 +85,18 @@ public class FunctionInvokerProvider
                 return false;
             }
         }
-        if (definitionHasSession != invocationConvention.get().hasSession()) {
-            return false;
+        return definitionHasSession == invocationConvention.get().hasSession();
+    }
+
+    public FunctionInvoker createFunctionInvoker(FunctionHandle functionHandle, Optional<InvocationConvention> invocationConvention)
+    {
+        BuiltInScalarFunctionImplementation builtInScalarFunctionImplementation = functionAndTypeManager.getBuiltInScalarFunctionImplementation(functionHandle);
+        for (ScalarImplementationChoice choice : builtInScalarFunctionImplementation.getAllChoices()) {
+            if (checkChoice(choice.getArgumentProperties(), choice.isNullable(), choice.hasProperties(), invocationConvention)) {
+                return new FunctionInvoker(choice.getMethodHandle());
+            }
         }
-        return true;
+        checkState(invocationConvention.isPresent());
+        throw new PrestoException(FUNCTION_NOT_FOUND, format("Dependent function implementation (%s) with convention (%s) is not available", functionHandle, invocationConvention.toString()));
     }
 }

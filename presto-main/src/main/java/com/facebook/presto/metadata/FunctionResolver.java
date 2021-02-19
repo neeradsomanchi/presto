@@ -61,6 +61,66 @@ public final class FunctionResolver
         this.functionAndTypeManager = requireNonNull(functionAndTypeManager, "functionAndTypeManager is null");
     }
 
+    private static boolean someParameterIsUnknown(List<Type> parameters)
+    {
+        return parameters.stream().anyMatch(type -> type.equals(UNKNOWN));
+    }
+
+    private static boolean allReturnNullOnGivenInputTypes(List<ApplicableFunction> applicableFunctions, List<Type> parameters)
+    {
+        return applicableFunctions.stream().allMatch(x -> returnsNullOnGivenInputTypes(x, parameters));
+    }
+
+    private static boolean returnsNullOnGivenInputTypes(ApplicableFunction applicableFunction, List<Type> parameterTypes)
+    {
+        Signature boundSignature = applicableFunction.getBoundSignature();
+        FunctionKind functionKind = boundSignature.getKind();
+        // Window and Aggregation functions have fixed semantic where NULL values are always skipped
+        if (functionKind != SCALAR) {
+            return true;
+        }
+
+        for (int i = 0; i < parameterTypes.size(); i++) {
+            Type parameterType = parameterTypes.get(i);
+            if (parameterType.equals(UNKNOWN)) {
+                // The original implementation checks only whether the particular argument has @SqlNullable.
+                // However, RETURNS NULL ON NULL INPUT / CALLED ON NULL INPUT is a function level metadata according
+                // to SQL spec. So there is a loss of precision here.
+                if (applicableFunction.isCalledOnNullInput()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    static String constructFunctionNotFoundErrorMessage(QualifiedObjectName functionName, List<TypeSignatureProvider> parameterTypes, Collection<? extends SqlFunction> candidates)
+    {
+        String name = toConciseFunctionName(functionName);
+        List<String> expectedParameters = new ArrayList<>();
+        for (SqlFunction function : candidates) {
+            expectedParameters.add(format("%s(%s) %s",
+                    name,
+                    Joiner.on(", ").join(function.getSignature().getArgumentTypes()),
+                    Joiner.on(", ").join(function.getSignature().getTypeVariableConstraints())));
+        }
+        String parameters = Joiner.on(", ").join(parameterTypes);
+        String message = format("Function %s not registered", name);
+        if (!expectedParameters.isEmpty()) {
+            String expected = Joiner.on(", ").join(expectedParameters);
+            message = format("Unexpected parameters (%s) for function %s. Expected: %s", parameters, name, expected);
+        }
+        return message;
+    }
+
+    private static String toConciseFunctionName(QualifiedObjectName functionName)
+    {
+        if (functionName.getCatalogSchemaName().equals(DEFAULT_NAMESPACE)) {
+            return functionName.getObjectName();
+        }
+        return functionName.toString();
+    }
+
     public FunctionHandle resolveFunction(
             FunctionNamespaceManager<?> functionNamespaceManager,
             Optional<? extends FunctionNamespaceTransactionHandle> transactionHandle,
@@ -294,66 +354,6 @@ public final class FunctionResolver
             resultBuilder.add(functionAndTypeManager.getType(typeSignatureProvider.getTypeSignature()));
         }
         return Optional.of(resultBuilder.build());
-    }
-
-    private static boolean someParameterIsUnknown(List<Type> parameters)
-    {
-        return parameters.stream().anyMatch(type -> type.equals(UNKNOWN));
-    }
-
-    private static boolean allReturnNullOnGivenInputTypes(List<ApplicableFunction> applicableFunctions, List<Type> parameters)
-    {
-        return applicableFunctions.stream().allMatch(x -> returnsNullOnGivenInputTypes(x, parameters));
-    }
-
-    private static boolean returnsNullOnGivenInputTypes(ApplicableFunction applicableFunction, List<Type> parameterTypes)
-    {
-        Signature boundSignature = applicableFunction.getBoundSignature();
-        FunctionKind functionKind = boundSignature.getKind();
-        // Window and Aggregation functions have fixed semantic where NULL values are always skipped
-        if (functionKind != SCALAR) {
-            return true;
-        }
-
-        for (int i = 0; i < parameterTypes.size(); i++) {
-            Type parameterType = parameterTypes.get(i);
-            if (parameterType.equals(UNKNOWN)) {
-                // The original implementation checks only whether the particular argument has @SqlNullable.
-                // However, RETURNS NULL ON NULL INPUT / CALLED ON NULL INPUT is a function level metadata according
-                // to SQL spec. So there is a loss of precision here.
-                if (applicableFunction.isCalledOnNullInput()) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    static String constructFunctionNotFoundErrorMessage(QualifiedObjectName functionName, List<TypeSignatureProvider> parameterTypes, Collection<? extends SqlFunction> candidates)
-    {
-        String name = toConciseFunctionName(functionName);
-        List<String> expectedParameters = new ArrayList<>();
-        for (SqlFunction function : candidates) {
-            expectedParameters.add(format("%s(%s) %s",
-                    name,
-                    Joiner.on(", ").join(function.getSignature().getArgumentTypes()),
-                    Joiner.on(", ").join(function.getSignature().getTypeVariableConstraints())));
-        }
-        String parameters = Joiner.on(", ").join(parameterTypes);
-        String message = format("Function %s not registered", name);
-        if (!expectedParameters.isEmpty()) {
-            String expected = Joiner.on(", ").join(expectedParameters);
-            message = format("Unexpected parameters (%s) for function %s. Expected: %s", parameters, name, expected);
-        }
-        return message;
-    }
-
-    private static String toConciseFunctionName(QualifiedObjectName functionName)
-    {
-        if (functionName.getCatalogSchemaName().equals(DEFAULT_NAMESPACE)) {
-            return functionName.getObjectName();
-        }
-        return functionName.toString();
     }
 
     private static class ApplicableFunction

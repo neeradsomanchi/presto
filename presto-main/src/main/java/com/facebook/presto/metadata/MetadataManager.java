@@ -224,6 +224,30 @@ public class MetadataManager
                 transactionManager);
     }
 
+    private static ConnectorPartitioningMetadata createConnectorPartitioningMetadata(ConnectorId connectorId, PartitioningMetadata partitioningMetadata)
+    {
+        ConnectorId partitioningConnectorId = partitioningMetadata.getPartitioningHandle().getConnectorId()
+                .orElseThrow(() -> new IllegalArgumentException("connectorId is expected to be present in the connector partitioning handle"));
+        checkArgument(
+                connectorId.equals(partitioningConnectorId),
+                "Unexpected partitioning handle connector: %s. Expected: %s.",
+                partitioningConnectorId,
+                connectorId);
+        return new ConnectorPartitioningMetadata(partitioningMetadata.getPartitioningHandle().getConnectorHandle(), partitioningMetadata.getPartitionColumns());
+    }
+
+    private static JsonCodec<ViewDefinition> createTestingViewCodec(FunctionAndTypeManager functionAndTypeManager)
+    {
+        ObjectMapperProvider provider = new ObjectMapperProvider();
+        provider.setJsonDeserializers(ImmutableMap.of(Type.class, new TypeDeserializer(functionAndTypeManager)));
+        return new JsonCodecFactory(provider).jsonCodec(ViewDefinition.class);
+    }
+
+    public static Function<SchemaTableName, QualifiedObjectName> convertFromSchemaTableName(String catalogName)
+    {
+        return input -> new QualifiedObjectName(catalogName, input.getSchemaName(), input.getTableName());
+    }
+
     @Override
     public final void verifyComparableOrderableContract()
     {
@@ -665,18 +689,6 @@ public class MetadataManager
                 columns,
                 partitioningMetadata.map(partitioning -> createConnectorPartitioningMetadata(connectorId, partitioning)));
         return new TableHandle(connectorId, connectorTableHandle, catalogMetadata.getTransactionHandleFor(connectorId), Optional.empty());
-    }
-
-    private static ConnectorPartitioningMetadata createConnectorPartitioningMetadata(ConnectorId connectorId, PartitioningMetadata partitioningMetadata)
-    {
-        ConnectorId partitioningConnectorId = partitioningMetadata.getPartitioningHandle().getConnectorId()
-                .orElseThrow(() -> new IllegalArgumentException("connectorId is expected to be present in the connector partitioning handle"));
-        checkArgument(
-                connectorId.equals(partitioningConnectorId),
-                "Unexpected partitioning handle connector: %s. Expected: %s.",
-                partitioningConnectorId,
-                connectorId);
-        return new ConnectorPartitioningMetadata(partitioningMetadata.getPartitioningHandle().getConnectorHandle(), partitioningMetadata.getPartitionColumns());
     }
 
     @Override
@@ -1340,13 +1352,6 @@ public class MetadataManager
         return getCatalogMetadataForWrite(session, connectorId).getMetadata();
     }
 
-    private static JsonCodec<ViewDefinition> createTestingViewCodec(FunctionAndTypeManager functionAndTypeManager)
-    {
-        ObjectMapperProvider provider = new ObjectMapperProvider();
-        provider.setJsonDeserializers(ImmutableMap.of(Type.class, new TypeDeserializer(functionAndTypeManager)));
-        return new JsonCodecFactory(provider).jsonCodec(ViewDefinition.class);
-    }
-
     private boolean canResolveOperator(OperatorType operatorType, List<TypeSignatureProvider> argumentTypes)
     {
         try {
@@ -1371,10 +1376,5 @@ public class MetadataManager
     public Map<String, Collection<ConnectorMetadata>> getCatalogsByQueryId()
     {
         return ImmutableMap.copyOf(catalogsByQueryId);
-    }
-
-    public static Function<SchemaTableName, QualifiedObjectName> convertFromSchemaTableName(String catalogName)
-    {
-        return input -> new QualifiedObjectName(catalogName, input.getSchemaName(), input.getTableName());
     }
 }
