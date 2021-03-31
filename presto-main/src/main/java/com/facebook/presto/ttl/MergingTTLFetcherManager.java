@@ -17,17 +17,12 @@ import com.facebook.airlift.log.Logger;
 import com.facebook.presto.metadata.InternalNode;
 import com.facebook.presto.metadata.InternalNodeManager;
 import com.facebook.presto.spi.NodeState;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 
 import javax.inject.Inject;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -39,16 +34,17 @@ import static com.facebook.airlift.concurrent.Threads.threadsNamed;
 import static com.google.common.collect.Sets.difference;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 
-public class TtlFetcherManager
+public abstract class MergingTTLFetcherManager<T>
+        implements TTLFetcherManager<T>
 {
-    private static final Logger log = Logger.get(TtlFetcherManager.class);
-    private final Set<TtlFetcher> ttlFetchers;
+    private static final Logger log = Logger.get(MergingTTLFetcherManager.class);
+    private final Set<TTLFetcher<T>> ttlFetchers;
     private final ScheduledExecutorService refreshTtlExecutor;
     private final InternalNodeManager nodeManager;
-    private final ConcurrentHashMap<InternalNode, NodeTtl> nodeTtlMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<InternalNode, NodeTTL<T>> nodeTtlMap = new ConcurrentHashMap<>();
 
     @Inject
-    public TtlFetcherManager(Set<TtlFetcher> ttlFetchers, InternalNodeManager nodeManager)
+    public MergingTTLFetcherManager(Set<TTLFetcher<T>> ttlFetchers, InternalNodeManager nodeManager)
     {
         this.ttlFetchers = ttlFetchers;
         this.nodeManager = nodeManager;
@@ -74,23 +70,23 @@ public class TtlFetcherManager
         refreshTtlExecutor.shutdownNow();
     }
 
-    @VisibleForTesting
     private void refreshTtlInfo()
     {
         Set<InternalNode> activeNodes = nodeManager.getNodes(NodeState.ACTIVE);
-        ImmutableSetMultimap.Builder<InternalNode, TtlConfidence> ttlInfoBuilder = ImmutableSetMultimap.builder();
+        ImmutableSetMultimap.Builder<InternalNode, TTLInfo<T>> ttlInfoBuilder = ImmutableSetMultimap.builder();
 
-        for (TtlFetcher ttlFetcher : ttlFetchers) {
-            Map<InternalNode, NodeTtl> ttlInfo = ttlFetcher.getTtlInfo(activeNodes);
+        log.info("TTL FETCHERS: %s", ttlFetchers);
+        for (TTLFetcher<T> ttlFetcher : ttlFetchers) {
+            Map<InternalNode, NodeTTL<T>> ttlInfo = ttlFetcher.getTTLInfo(activeNodes);
             log.info("TTL Info from fetcher: %s", ttlInfo);
-            ttlInfo.entrySet().stream().forEach(entry -> ttlInfoBuilder.putAll(entry.getKey(), entry.getValue().getTtls()));
+            ttlInfo.forEach((key, value) -> ttlInfoBuilder.putAll(key, value.getTTLInfo()));
         }
 
-        ImmutableSetMultimap<InternalNode, TtlConfidence> ttlInfo = ttlInfoBuilder.build();
+        ImmutableSetMultimap<InternalNode, TTLInfo<T>> ttlInfo = ttlInfoBuilder.build();
 
         log.info("TTL SetMultiMap: %s", ttlInfo);
 
-        Map<InternalNode, NodeTtl> finalNodeTtlMap = generateNodeTtls(ttlInfo);
+        Map<InternalNode, NodeTTL<T>> finalNodeTtlMap = generateNodeTTLs(ttlInfo);
 
         log.info("FinalNodeTtlMap: %s", finalNodeTtlMap);
 
@@ -104,36 +100,20 @@ public class TtlFetcherManager
         log.info("TTLs refreshed, nodeTtlMap: %s", nodeTtlMap);
     }
 
-    private Map<InternalNode, NodeTtl> generateNodeTtls(ImmutableSetMultimap<InternalNode, TtlConfidence> ttlInfo)
+    public abstract NodeTTL<T> mergeTTLInfo(Collection<TTLInfo<T>> ttlInfo);
+
+    private Map<InternalNode, NodeTTL<T>> generateNodeTTLs(ImmutableSetMultimap<InternalNode, TTLInfo<T>> ttlInfo)
     {
-        ImmutableMap.Builder<InternalNode, NodeTtl> nodeTtls = ImmutableMap.builder();
+        ImmutableMap.Builder<InternalNode, NodeTTL<T>> nodeTtls = ImmutableMap.builder();
 
-        for (Map.Entry<InternalNode, Collection<TtlConfidence>> entry : ttlInfo.asMap().entrySet()) {
-            ImmutableSet.Builder<TtlConfidence> ttlConfidenceBuilder = ImmutableSet.builder();
-            List<TtlConfidence> ttls = new ArrayList<>(entry.getValue());
-            Collections.sort(ttls);
-
-            for (int i = 0; i < ttls.size(); i++) {
-                TtlConfidence ttl = ttls.get(i);
-
-                if (i == 0) {
-                    ttlConfidenceBuilder.add(ttl);
-                    continue;
-                }
-
-                TtlConfidence prevTtl = ttls.get(i - 1);
-
-                if (ttl.getConfidencePercentage() < prevTtl.getConfidencePercentage()) {
-                    ttlConfidenceBuilder.add(ttl);
-                }
-            }
-            nodeTtls.put(entry.getKey(), new NodeTtl(ttlConfidenceBuilder.build()));
+        for (Map.Entry<InternalNode, Collection<TTLInfo<T>>> entry : ttlInfo.asMap().entrySet()) {
+            nodeTtls.put(entry.getKey(), mergeTTLInfo(entry.getValue()));
         }
         return nodeTtls.build();
     }
 
-    public Optional<NodeTtl> getTtlInfo(InternalNode node)
+    public Optional<NodeTTL<T>> getTTLInfo(InternalNode node)
     {
-        return Optional.of(nodeTtlMap.get(node));
+        return nodeTtlMap.containsKey(node) ? Optional.of(nodeTtlMap.get(node)) : Optional.empty();
     }
 }

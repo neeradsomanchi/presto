@@ -11,14 +11,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.facebook.presto.ttl;
 
 import com.facebook.presto.metadata.InternalNode;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 
-public interface TtlFetcher
+public interface TTLFetcherManager<T>
 {
-    Map<InternalNode, NodeTtl> getTtlInfo(Set<InternalNode> nodes);
+    Optional<NodeTTL<T>> getTTLInfo(InternalNode node);
+
+    void start();
+
+    void stop();
 }

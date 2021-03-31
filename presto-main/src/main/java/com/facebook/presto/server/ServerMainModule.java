@@ -165,6 +165,8 @@ import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.FunctionCall;
 import com.facebook.presto.statusservice.NodeStatusService;
 import com.facebook.presto.transaction.TransactionManagerConfig;
+import com.facebook.presto.ttl.TTLFetcher;
+import com.facebook.presto.ttl.TTLFetcherManager;
 import com.facebook.presto.type.TypeDeserializer;
 import com.facebook.presto.util.FinalizerService;
 import com.facebook.presto.util.GcStatusMonitor;
@@ -587,6 +589,10 @@ public class ServerMainModule
 
         //Optional Status Detector
         newOptionalBinder(binder, NodeStatusService.class);
+
+        //Optional TTL fetcher
+        newOptionalBinder(binder, TTLFetcher.class);
+        newOptionalBinder(binder, TTLFetcherManager.class);
     }
 
     @Provides

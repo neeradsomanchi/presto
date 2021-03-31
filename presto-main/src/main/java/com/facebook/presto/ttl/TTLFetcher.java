@@ -1,4 +1,3 @@
-
 /*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +13,12 @@
  */
 package com.facebook.presto.ttl;
 
-import com.google.inject.Binder;
-import com.google.inject.Module;
-import com.google.inject.Scopes;
+import com.facebook.presto.metadata.InternalNode;
 
-public class TtlFetcherManagerModule
-        implements Module
+import java.util.Map;
+import java.util.Set;
+
+public interface TTLFetcher<T>
 {
-    @Override
-    public void configure(Binder binder)
-    {
-        binder.bind(TtlFetcherManager.class).in(Scopes.SINGLETON);
-    }
+    Map<InternalNode, NodeTTL<T>> getTTLInfo(Set<InternalNode> nodes);
 }

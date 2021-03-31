@@ -17,13 +17,15 @@ package com.facebook.presto.ttl;
 import java.time.Instant;
 import java.util.Objects;
 
-public class TtlConfidence
-        implements Comparable<TtlConfidence>
+import static com.google.common.base.MoreObjects.toStringHelper;
+
+public class ConfidenceBasedTTLInfo
+        implements Comparable<ConfidenceBasedTTLInfo>
 {
     private final Instant expiryEpochTime;
     private final Double confidencePercentage;
 
-    public TtlConfidence(long expiryEpochTime, double confidencePercentage)
+    public ConfidenceBasedTTLInfo(long expiryEpochTime, double confidencePercentage)
     {
         this.expiryEpochTime = Instant.ofEpochSecond(expiryEpochTime);
         this.confidencePercentage = confidencePercentage;
@@ -40,7 +42,7 @@ public class TtlConfidence
     }
 
     @Override
-    public int compareTo(TtlConfidence o)
+    public int compareTo(ConfidenceBasedTTLInfo o)
     {
         int compareExpiryTime = expiryEpochTime.compareTo(o.getExpiryEpochTime());
 
@@ -66,8 +68,16 @@ public class TtlConfidence
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        TtlConfidence other = (TtlConfidence) obj;
+        ConfidenceBasedTTLInfo other = (ConfidenceBasedTTLInfo) obj;
         return expiryEpochTime.equals(other.getExpiryEpochTime()) &&
                 confidencePercentage.equals(other.getConfidencePercentage());
+    }
+
+    public String toString()
+    {
+        return toStringHelper(this)
+                .add("expiryEpochTime", expiryEpochTime)
+                .add("confidencePercentage", confidencePercentage)
+                .toString();
     }
 }

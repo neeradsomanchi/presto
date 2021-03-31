@@ -48,14 +48,17 @@ import com.facebook.presto.sql.analyzer.FeaturesConfig;
 import com.facebook.presto.sql.parser.SqlParserOptions;
 import com.facebook.presto.storage.TempStorageManager;
 import com.facebook.presto.storage.TempStorageModule;
-import com.facebook.presto.ttl.TtlFetcherManager;
-import com.facebook.presto.ttl.TtlFetcherManagerModule;
+import com.facebook.presto.ttl.ConfidenceBasedTTLInfo;
+import com.facebook.presto.ttl.TTLFetcherManager;
+import com.facebook.presto.ttl.TTLFetcherModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.TypeLiteral;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.LinkedHashMap;
@@ -198,7 +201,7 @@ public class PrestoServer
                 new GracefulShutdownModule(),
                 new WarningCollectorModule(),
                 new TempStorageModule(),
-                new TtlFetcherManagerModule());
+                new TTLFetcherModule());
 
         modules.addAll(getAdditionalModules());
 
@@ -230,7 +233,7 @@ public class PrestoServer
             injector.getInstance(PasswordAuthenticatorManager.class).loadPasswordAuthenticator();
             injector.getInstance(EventListenerManager.class).loadConfiguredEventListener();
             injector.getInstance(TempStorageManager.class).loadTempStorages();
-            injector.getInstance(TtlFetcherManager.class).start();
+            injector.getInstance(Key.get(new TypeLiteral<TTLFetcherManager<ConfidenceBasedTTLInfo>>() {})).start();
 
             injector.getInstance(Announcer.class).start();
 

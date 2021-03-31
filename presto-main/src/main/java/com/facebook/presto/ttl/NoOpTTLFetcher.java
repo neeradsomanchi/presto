@@ -11,6 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.facebook.presto.ttl;
 
 import com.facebook.presto.metadata.InternalNode;
@@ -22,12 +23,16 @@ import java.util.Set;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.util.function.Function.identity;
 
-public class InMemoryTtlFetcher
-        implements TtlFetcher
+public class NoOpTTLFetcher<T>
+        implements TTLFetcher<T>
 {
-    @Override
-    public Map<InternalNode, NodeTtl> getTtlInfo(Set<InternalNode> nodes)
+    public NoOpTTLFetcher()
     {
-        return nodes.stream().collect(toImmutableMap(identity(), node -> new NodeTtl(ImmutableSet.of())));
+    }
+
+    @Override
+    public Map<InternalNode, NodeTTL<T>> getTTLInfo(Set<InternalNode> nodes)
+    {
+        return nodes.stream().collect(toImmutableMap(identity(), node -> new NodeTTL<>(ImmutableSet.of())));
     }
 }

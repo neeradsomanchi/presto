@@ -11,29 +11,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.facebook.presto.ttl;
 
-import java.util.Objects;
-import java.util.Set;
-
-public class NodeTtl
+public class TTLInfo<T>
 {
-    private final Set<TtlConfidence> ttls;
+    private final T t;
 
-    public NodeTtl(Set<TtlConfidence> ttls)
+    public TTLInfo(T t)
     {
-        this.ttls = ttls;
+        this.t = t;
     }
 
-    public Set<TtlConfidence> getTtls()
+    public T getTTL()
     {
-        return ttls;
+        return t;
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(ttls);
+        return getTTL().hashCode();
     }
 
     @Override
@@ -42,10 +40,16 @@ public class NodeTtl
         if (this == obj) {
             return true;
         }
-        if (obj == null || getClass() != obj.getClass()) {
+        if (getClass() != obj.getClass()) {
             return false;
         }
-        NodeTtl other = (NodeTtl) obj;
-        return this.getTtls().equals(other.getTtls());
+        TTLInfo<?> other = (TTLInfo<?>) obj;
+
+        return getTTL().equals(other.getTTL());
+    }
+
+    public String toString()
+    {
+        return getTTL().toString();
     }
 }
