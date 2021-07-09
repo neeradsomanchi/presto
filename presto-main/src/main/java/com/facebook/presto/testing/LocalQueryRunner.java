@@ -41,6 +41,7 @@ import com.facebook.presto.cost.ScalarStatsCalculator;
 import com.facebook.presto.cost.StatsCalculator;
 import com.facebook.presto.cost.StatsNormalizer;
 import com.facebook.presto.cost.TaskCountEstimator;
+import com.facebook.presto.dispatcher.NoOpQueryManager;
 import com.facebook.presto.dispatcher.QueryPrerequisitesManager;
 import com.facebook.presto.eventlistener.EventListenerManager;
 import com.facebook.presto.execution.AlterFunctionTask;
@@ -333,7 +334,9 @@ public class LocalQueryRunner
                 nodeManager,
                 new NodeSelectionStats(),
                 nodeSchedulerConfig,
-                new NodeTaskMap(finalizerService));
+                new NodeTaskMap(finalizerService),
+                new ThrowingTTLFetcherManager(),
+                new NoOpQueryManager());
         this.pageSinkManager = new PageSinkManager();
         CatalogManager catalogManager = new CatalogManager();
         this.transactionManager = InMemoryTransactionManager.create(
