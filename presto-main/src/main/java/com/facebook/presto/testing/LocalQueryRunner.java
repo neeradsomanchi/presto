@@ -189,6 +189,8 @@ import com.facebook.presto.testing.PageConsumerOperator.PageConsumerOutputFactor
 import com.facebook.presto.transaction.InMemoryTransactionManager;
 import com.facebook.presto.transaction.TransactionManager;
 import com.facebook.presto.transaction.TransactionManagerConfig;
+import com.facebook.presto.ttl.clusterTTLProvider.ThrowingClusterTTLProviderManager;
+import com.facebook.presto.ttl.fetcherManager.ThrowingTTLFetcherManager;
 import com.facebook.presto.util.FinalizerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -432,7 +434,9 @@ public class LocalQueryRunner
                 blockEncodingManager,
                 new TestingTempStorageManager(),
                 new QueryPrerequisitesManager(),
-                new SessionPropertyDefaults(nodeInfo));
+                new SessionPropertyDefaults(nodeInfo),
+                new ThrowingTTLFetcherManager(),
+                new ThrowingClusterTTLProviderManager());
 
         connectorManager.addConnectorFactory(globalSystemConnectorFactory);
         connectorManager.createConnection(GlobalSystemConnector.NAME, GlobalSystemConnector.NAME, ImmutableMap.of());
